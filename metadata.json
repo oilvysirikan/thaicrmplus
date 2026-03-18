@@ -1,0 +1,6 @@
+{
+  "name": "Siam Connect Hub",
+  "description": "An integration dashboard to connect Shopify, SHIPPOP, and LINE Messaging API for automated e-commerce workflows. Manage API connections, monitor orders, and view notification logs.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
