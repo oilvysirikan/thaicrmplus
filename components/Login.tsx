@@ -1,16 +1,26 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { login } from '../api';
+import { fetchLineConfig, startLineLogin } from '../lineApi';
+import LineIcon from './icons/LineIcon';
 
 interface LoginProps {
   onSwitchToSignup: () => void;
   addToast: (message: string, type: 'success' | 'error') => void;
+  onContinueAsGuest?: () => void;
 }
 
-const Login: React.FC<LoginProps> = ({ onSwitchToSignup, addToast }) => {
+const Login: React.FC<LoginProps> = ({ onSwitchToSignup, addToast, onContinueAsGuest }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [lineLoginEnabled, setLineLoginEnabled] = useState(false);
+
+  useEffect(() => {
+    fetchLineConfig()
+      .then((cfg) => setLineLoginEnabled(cfg.loginEnabled))
+      .catch(() => setLineLoginEnabled(false));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -72,13 +82,38 @@ const Login: React.FC<LoginProps> = ({ onSwitchToSignup, addToast }) => {
             </button>
           </div>
         </form>
-        
+
+        {lineLoginEnabled && (
+          <>
+            <div className="relative my-2">
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200"></div></div>
+              <div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-gray-400">or</span></div>
+            </div>
+            <button
+              type="button"
+              onClick={() => startLineLogin('/')}
+              className="w-full flex items-center justify-center py-3 px-4 rounded-md text-white font-medium bg-[#06C755] hover:bg-[#05b34c] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#06C755]"
+            >
+              <span className="mr-2 flex items-center"><LineIcon /></span>
+              Login with LINE
+            </button>
+          </>
+        )}
+
         <div className="text-center text-sm text-gray-600 mt-6">
             Don't have an account?{' '}
             <button onClick={onSwitchToSignup} className="font-medium text-indigo-600 hover:text-indigo-500 focus:outline-none focus:underline">
                 Sign up
             </button>
         </div>
+
+        {onContinueAsGuest && (
+          <div className="text-center text-sm mt-2">
+            <button onClick={onContinueAsGuest} className="text-gray-400 hover:text-gray-600 focus:outline-none focus:underline">
+                Continue without signing in
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

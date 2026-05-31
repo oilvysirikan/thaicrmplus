@@ -1,0 +1,20 @@
+# Local dev secrets for Cloudflare Pages Functions (loaded by `wrangler pages dev`).
+# Copy to `.dev.vars` and fill in. NEVER commit `.dev.vars`.
+# In production these are set in Cloudflare Pages -> Settings -> Environment variables.
+
+# LINE Login channel
+LINE_LOGIN_CHANNEL_ID=
+LINE_LOGIN_CHANNEL_SECRET=
+
+# LINE Messaging API channel
+LINE_MESSAGING_CHANNEL_ACCESS_TOKEN=
+LINE_MESSAGING_CHANNEL_SECRET=
+
+# Optional: LIFF app id for the customer membership page
+LINE_LIFF_ID=
+
+# Recommended: random string used to sign the admin session cookie
+SESSION_SECRET=
+
+# Optional: shared secret allowing server-to-server calls to /api/line/push
+PUSH_API_KEY=

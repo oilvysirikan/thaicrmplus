@@ -1,0 +1,6 @@
+# Cloudflare Pages project configuration (used by the Git build + `wrangler pages dev`).
+# `pages_build_output_dir` marks this as a Pages project and points at the Vite
+# build output; the `functions/` directory is deployed as Pages Functions.
+name = "thaicrmplus"
+pages_build_output_dir = "dist"
+compatibility_date = "2024-11-01"
