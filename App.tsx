@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { View } from './types';
 import Sidebar from './components/Sidebar';
+import Login from './components/Login';
+import Signup from './components/Signup';
 import Dashboard from './components/Dashboard';
 import Connections from './components/Connections';
 import Orders from './components/Orders';
@@ -26,10 +28,16 @@ const App: React.FC = () => {
   const { 
     loadingInitialState, 
     toasts, 
-    addToast
+    addToast,
+    user,
+    authView,
+    setAuthView,
+    lineProfile,
+    handleLineLogout
   } = useAppContext();
 
   const [currentView, setCurrentView] = useState<View>(View.Dashboard);
+  const [guest, setGuest] = useState<boolean>(false);
 
   const renderView = () => {
     switch (currentView) {
@@ -83,12 +91,31 @@ const App: React.FC = () => {
     );
   }
 
+  // Auth gate: require a Firebase user or a LINE login. "Continue without
+  // signing in" preserves the previous guest behaviour so no one is locked out.
+  const isAuthenticated = Boolean(user) || Boolean(lineProfile);
+  if (!isAuthenticated && !guest) {
+    return authView === 'signup'
+      ? <Signup onSwitchToLogin={() => setAuthView('login')} addToast={addToast} />
+      : <Login onSwitchToSignup={() => setAuthView('signup')} addToast={addToast} onContinueAsGuest={() => setGuest(true)} />;
+  }
+
   const mainContentClass = currentView === View.Chat || currentView === View.LiffPreview ? "flex-1 flex flex-col overflow-hidden" : "flex-1 flex flex-col overflow-hidden relative";
 
   return (
     <div className="flex h-screen bg-gray-50 text-gray-800">
       <Sidebar currentView={currentView} setCurrentView={setCurrentView} onLogout={() => { setCurrentView(View.Dashboard); }} />
       <main className={mainContentClass}>
+        {lineProfile && (
+          <div className="flex items-center justify-end gap-3 px-6 py-2 bg-white border-b border-gray-200">
+            {lineProfile.pictureUrl && (
+              <img src={lineProfile.pictureUrl} alt={lineProfile.displayName} className="w-7 h-7 rounded-full" />
+            )}
+            <span className="text-sm text-gray-600">Signed in via LINE as <span className="font-semibold text-gray-800">{lineProfile.displayName}</span></span>
+            <button onClick={handleLineLogout} className="text-sm font-medium text-[#06C755] hover:underline">Logout</button>
+          </div>
+        )}
+
         {/* Toast Container */}
         <div aria-live="assertive" className="fixed top-5 right-5 z-50 w-full max-w-sm space-y-3 pointer-events-none">
           {toasts.map(toast => (

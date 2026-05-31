@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CustomerProfile, Order } from '../types';
 import { fetchOrders, fetchCustomerProfile } from '../api'; // You might need a new API function
+import { getLiffProfile } from '../liffClient';
 import ShieldCheckIcon from './icons/ShieldCheckIcon';
 import StarIcon from './icons/StarIcon';
 
@@ -19,6 +20,8 @@ const LiffMembershipPage: React.FC = () => {
     const [customer, setCustomer] = useState<CustomerProfile | null>(null);
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
+    const [lineName, setLineName] = useState<string | null>(null);
+    const [lineAvatar, setLineAvatar] = useState<string | null>(null);
 
     useEffect(() => {
         const loadData = async () => {
@@ -34,6 +37,13 @@ const LiffMembershipPage: React.FC = () => {
                 ]);
                 setCustomer(customerData);
                 setOrders(allOrders.filter(o => o.customerId === customerData.id).slice(0, 3)); // Show recent 3 orders
+
+                // When opened inside the LINE app, greet the real LINE user.
+                const liffProfile = await getLiffProfile();
+                if (liffProfile) {
+                    setLineName(liffProfile.displayName);
+                    if (liffProfile.pictureUrl) setLineAvatar(liffProfile.pictureUrl);
+                }
             } catch (error) {
                 console.error("Failed to load LIFF page data", error);
             } finally {
@@ -59,10 +69,10 @@ const LiffMembershipPage: React.FC = () => {
             {/* Header */}
             <div className="bg-white p-4 shadow-sm">
                 <div className="flex items-center space-x-4">
-                    <img src={customer.avatarUrl} alt={customer.name} className="w-16 h-16 rounded-full border-2 border-indigo-200" />
+                    <img src={lineAvatar ?? customer.avatarUrl} alt={lineName ?? customer.name} className="w-16 h-16 rounded-full border-2 border-indigo-200" />
                     <div>
                         <p className="text-sm text-gray-500">Welcome back,</p>
-                        <h1 className="text-xl font-bold text-gray-800">{customer.name}</h1>
+                        <h1 className="text-xl font-bold text-gray-800">{lineName ?? customer.name}</h1>
                     </div>
                 </div>
             </div>

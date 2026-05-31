@@ -4,6 +4,7 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from './firebaseConfig';
 import { fetchConnectionStatuses, fetchQuickReplies, logout } from './api';
 import { ConnectionStatus, QuickReply } from './types';
+import { fetchLineConfig, fetchLineSession, lineLogout, LineConfig, LineSessionProfile } from './lineApi';
 
 interface ToastMessage {
   id: number;
@@ -31,6 +32,12 @@ interface AppContextType {
   quickReplies: QuickReply[];
   refetchQuickReplies: () => void;
 
+  // LINE Login (via backend)
+  lineConfig: LineConfig | null;
+  lineProfile: LineSessionProfile | null;
+  refetchLineSession: () => Promise<void>;
+  handleLineLogout: () => Promise<void>;
+
   // Toasts
   toasts: ToastMessage[];
   addToast: (message: string, type: 'success' | 'error') => void;
@@ -53,6 +60,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const [quickReplies, setQuickReplies] = useState<QuickReply[]>([]);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [lineConfig, setLineConfig] = useState<LineConfig | null>(null);
+  const [lineProfile, setLineProfile] = useState<LineSessionProfile | null>(null);
 
   const addToast = useCallback((message: string, type: 'success' | 'error') => {
     const id = Date.now();
@@ -61,6 +70,26 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setToasts(prevToasts => prevToasts.filter(toast => toast.id !== id));
     }, 5000);
   }, []);
+
+  const refetchLineSession = useCallback(async () => {
+    try {
+      const session = await fetchLineSession();
+      setLineProfile(session.authenticated && session.profile ? session.profile : null);
+    } catch (error) {
+      console.error('Failed to fetch LINE session', error);
+      setLineProfile(null);
+    }
+  }, []);
+
+  const handleLineLogout = useCallback(async () => {
+    try {
+      await lineLogout();
+      setLineProfile(null);
+      addToast('Logged out of LINE.', 'success');
+    } catch (error) {
+      addToast('Failed to log out of LINE.', 'error');
+    }
+  }, [addToast]);
 
   const loadQuickReplies = useCallback(async () => {
     if (!user) return;
@@ -91,6 +120,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setLineStatus(statuses.line);
         setFacebookStatus(statuses.facebook);
         setQuickReplies(replies);
+        // Load LINE backend config + session in parallel (non-fatal on failure).
+        fetchLineConfig().then(setLineConfig).catch(() => setLineConfig(null));
+        refetchLineSession();
       } catch (error) {
         console.error("Failed to fetch initial data", error);
         // We don't want to show an error toast here if it's just because the mock user has no data yet
@@ -99,7 +131,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setLoadingInitialState(false);
     });
     return () => unsubscribe();
-  }, [addToast]);
+  }, [addToast, refetchLineSession]);
   
   const handleLogout = async () => {
     try {
@@ -125,6 +157,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setFacebookStatus,
     quickReplies,
     refetchQuickReplies: loadQuickReplies,
+    lineConfig,
+    lineProfile,
+    refetchLineSession,
+    handleLineLogout,
     toasts,
     addToast,
     handleLogout,

@@ -10,6 +10,7 @@ import PlusCircleIcon from './icons/PlusCircleIcon';
 import TrashIcon from './icons/TrashIcon';
 import ExternalLinkIcon from './icons/ExternalLinkIcon';
 import { saveShippopKey, saveLineCredentials, saveFacebookCredentials, fetchFacebookChatbotSettings, saveFacebookChatbotSettings } from '../api';
+import { verifyLineMessaging } from '../lineApi';
 import { useAppContext } from '../hooks/useAppContext';
 import { FacebookChatbotSettings, FacebookMenuItem, FacebookIceBreaker } from '../types';
 
@@ -101,9 +102,16 @@ const Connections: React.FC = () => {
     }
     setIsSavingLine(true);
     try {
+      // Validate the channel access token against LINE before saving.
+      const result = await verifyLineMessaging(lineToken);
+      if (!result.connected) {
+        setLineStatus(ConnectionStatus.Disconnected);
+        addToast('LINE rejected this Channel Access Token. Please check it.', 'error');
+        return;
+      }
       await saveLineCredentials(lineToken, lineSecret);
       setLineStatus(ConnectionStatus.Connected);
-      addToast('LINE API credentials saved!', 'success');
+      addToast(`LINE connected: ${result.bot?.displayName ?? 'Official Account'}`, 'success');
     } catch (error: any) {
       setLineStatus(ConnectionStatus.Disconnected);
       addToast(error.message || 'Failed to save LINE credentials.', 'error');
